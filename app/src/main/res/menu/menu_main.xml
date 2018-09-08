@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/new_btn"
+        android:icon="@drawable/ic_new"
+        android:title="add"
+        app:showAsAction="always"
+        />
+
+    <item
+        android:id="@+id/notify_btn"
+        android:icon="@drawable/ic_notify"
+        android:title="notify"
+        app:showAsAction="always"
+        />
+
+    <item
+        android:id="@+id/silence_btn"
+        android:icon="@drawable/ic_silence"
+        android:title="notify"
+        app:showAsAction="always"
+        />
+
+</menu>
