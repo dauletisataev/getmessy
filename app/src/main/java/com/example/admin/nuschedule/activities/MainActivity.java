@@ -27,8 +27,6 @@ import android.widget.Toast;
 
 import com.example.admin.nuschedule.R;
 import com.example.admin.nuschedule.database.DBHelper;
-import com.example.admin.nuschedule.models.Day;
-import com.example.admin.nuschedule.models.Lesson;
 import com.example.admin.nuschedule.reciever.NotificationReciever;
 import com.example.admin.nuschedule.other.Utils;
 import com.example.admin.nuschedule.view.LessonEventView;
@@ -44,20 +42,17 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener{
-    private static final String TAG = AppCompatActivity.class.getSimpleName();
-    public static final String MY_PREFS_NAME = "NuSchedulePref";
-    public String STUDENT_ID = "201599251";
-    
+import static com.example.admin.nuschedule.other.Constants.MY_PREFS_NAME;
+import static com.example.admin.nuschedule.other.Constants.STUDENT_ID;
+import static com.example.admin.nuschedule.other.Constants.dayOfWeek;
+public class MainActivity extends AppCompatActivity{
+
     RelativeLayout currentRelativeLayout;
-    private  List<Day> days;
     private int[] touchDownXY = new int[2];
     Utils utils;
     DBHelper dbHelper;
     SQLiteDatabase SQLdatabase;
-    String[] dayOfWeek = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
     int[] androidColors;
-    //private ScheduleClient scheduleClient;
     Toolbar toolbar;
     Menu menu;
     @Override
@@ -66,35 +61,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ((RelativeLayout) findViewById(R.id.mondayRelativeLayout)).setOnTouchListener(this);
-        ((RelativeLayout) findViewById(R.id.tuesdayRelativeLayout)).setOnTouchListener(this);
-        ((RelativeLayout) findViewById(R.id.wednesdayRelativeLayout)).setOnTouchListener(this);
-        ((RelativeLayout) findViewById(R.id.thursdayRelativeLayout)).setOnTouchListener(this);
-        ((RelativeLayout) findViewById(R.id.fridayRelativeLayout)).setOnTouchListener(this);
-
-        ((RelativeLayout) findViewById(R.id.mondayRelativeLayout)).setOnClickListener(this);
-        ((RelativeLayout) findViewById(R.id.tuesdayRelativeLayout)).setOnClickListener(this);
-        ((RelativeLayout) findViewById(R.id.wednesdayRelativeLayout)).setOnClickListener(this);
-        ((RelativeLayout) findViewById(R.id.thursdayRelativeLayout)).setOnClickListener(this);
-        ((RelativeLayout) findViewById(R.id.fridayRelativeLayout)).setOnClickListener(this);
-
         toolbar = (Toolbar) findViewById(R.id.toolBar);
         toolbar.setTitleTextColor(getResources().getColor(R.color.white));
         setSupportActionBar(toolbar);
         toolbar.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
         androidColors = getResources().getIntArray(R.array.mainColors);
-
-        initializeDB(STUDENT_ID);
-        if(tableExists()) importLessonsFromDB(); else importLessonsFromFB();
-
-        /*scheduleClient = new ScheduleClient(this);
-        scheduleClient.doBindService();*/
-
         String textViewId = dayOfWeek[utils.getTodayIndex()].toLowerCase()+"TextView";
         int txtId = getResources().getIdentifier(textViewId, "id", getPackageName());
         ((TextView) findViewById(txtId)).setTextColor(getResources().getColor(R.color.black_de));
     }
-    @Override
+    /*@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         this.menu = menu;
@@ -178,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         lesson.setId(lessonId);
                         dayLessons.add(lesson);
                     }
-                    Day day = new Day(snapshot.getKey(), dayLessons);
+                    //Day day = new Day(snapshot.getKey(), dayLessons);
                     Log.d("lessons in ONE DAY", dayLessons.toString());
                     days.add( day);
                 }
@@ -195,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void onCancelled(DatabaseError error) {
                 // Failed to read value
-                Log.w(TAG, "Failed to read value.", error.toException());
+                //Log.w(TAG, "Failed to read value.", error.toException());
             }
         });
     }
@@ -251,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 int relativeId = getResources().getIdentifier(layoutId, "id", getPackageName());
                 currentRelativeLayout = (RelativeLayout) findViewById(relativeId);
                 final LessonEventView newLesson = new LessonEventView(getApplicationContext(), null);
-                Log.d(TAG, "addLessonViews: "+lesson);
+                //Log.d(TAG, "addLessonViews: "+lesson);
                 newLesson.setNameText(lesson.getTitle());
                 newLesson.setTag(lesson.getId());
                 newLesson.setRoomText(lesson.getRoom());
@@ -289,7 +265,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         initializeDB(STUDENT_ID);
         final Cursor cursor = SQLdatabase.rawQuery("SELECT * FROM "+DBHelper.TABLE_SCHEDULE_ID+" WHERE _id = " + lessonId, null);
-        Log.d(TAG, "count cursor: "+ cursor.getCount());
+        //Log.d(TAG, "count cursor: "+ cursor.getCount());
         if (cursor.moveToFirst()){
             int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
             int dayIndex = cursor.getColumnIndex(DBHelper.KEY_DAY);
@@ -591,7 +567,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         c.set(Calendar.SECOND, 0);
         Log.d("mLog", "after add calendar: "+c.getTimeInMillis());
         Intent intent = new Intent(MainActivity.this, NotificationReciever.class);
-        Log.d(TAG, "setAlarmService for lesson: "+lesson.getTitle()+" "+lesson.getType()+" "+lesson.getStartTime());
+        //Log.d(TAG, "setAlarmService for lesson: "+lesson.getTitle()+" "+lesson.getType()+" "+lesson.getStartTime());
         intent.putExtra("title", lesson.getTitle());
         intent.putExtra("lesson_id", lesson.getId());
         intent.putExtra("subText", lesson.getStartTime()+"-"+lesson.getEndTime()+", "+lesson.getType()+"\n"+lesson.getRoom());
@@ -604,4 +580,5 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             am.setRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), am.INTERVAL_DAY*7, pendingIntent);
 
     }
+    */
 }

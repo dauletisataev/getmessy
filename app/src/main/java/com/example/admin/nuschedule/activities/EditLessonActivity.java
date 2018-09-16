@@ -2,10 +2,14 @@ package com.example.admin.nuschedule.activities;
 
 import android.app.Activity;
 import android.app.TimePickerDialog;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -22,28 +26,32 @@ import android.widget.Toast;
 
 import com.example.admin.nuschedule.R;
 import com.example.admin.nuschedule.database.DBHelper;
-import com.example.admin.nuschedule.models.Lesson;
 import com.example.admin.nuschedule.other.Utils;
+import com.example.admin.nuschedule.room_model.LessonModel;
 import com.example.admin.nuschedule.view.SquareImage;
+import com.example.admin.nuschedule.viewModels.LessonViewModel;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 
 import petrov.kristiyan.colorpicker.ColorPicker;
 
+import static com.example.admin.nuschedule.other.Constants.STUDENT_ID;
+import static com.example.admin.nuschedule.other.Constants.TAG;
+
 public class EditLessonActivity extends AppCompatActivity implements View.OnClickListener{
-    public String STUDENT_ID = "201599251";
     Toolbar toolbar;
     TextView startTime, endTime;
     SquareImage colorPickerBtn;
     EditText mTitle, mDescription, mType, mInstructor, mRoom;
     RadioGroup radioGroup;
-    Lesson lesson;
-    int lessonId;
+    LessonModel lesson;
+    long lessonId;
     DBHelper dbHelper;
     SQLiteDatabase SQLdatabase;
     ArrayList<String> daysChecked;
     Utils utils = new Utils();
+    LessonViewModel lessonViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,12 +66,23 @@ public class EditLessonActivity extends AppCompatActivity implements View.OnClic
         if (android.os.Build.VERSION.SDK_INT >= 21) {
             findViewById(R.id.shadow_view).setVisibility(View.GONE);
         }
-
-        lessonId = getIntent().getIntExtra("lessonId", -1);
+        lessonId = getIntent().getLongExtra("lessonId", -1);
         Log.d("mLog", "recieved ID: "+ lessonId);
-        lesson = getLesson(lessonId);
         initializeViews();
-        setValues(lesson);
+        lessonViewModel = ViewModelProviders.of(this).get(LessonViewModel.class);
+        lessonViewModel.getLessonById(lessonId).observe(this, new Observer<LessonModel>() {
+            @Override
+            public void onChanged(@Nullable LessonModel lessonModel) {
+                if(lessonModel != null) {
+                    lesson = lessonModel;
+                    setValues(lessonModel);
+                }
+                else {
+                    Toast.makeText(EditLessonActivity.this, "Lesson null", Toast.LENGTH_SHORT).show();
+                    onBackPressed();
+                }
+            }
+        });
     }
 
     @Override
@@ -135,28 +154,41 @@ public class EditLessonActivity extends AppCompatActivity implements View.OnClic
             onBackPressed();  return true;
         }
         if (id == R.id.save_button) {
-            if (isFilledCorrect()) {
-                initializeDB(STUDENT_ID);
-                ContentValues contentValues = new ContentValues();
-                contentValues.put(DBHelper.KEY_STARTTIME, lesson.getStartTime());
-                contentValues.put(DBHelper.KEY_ENDTIME, lesson.getEndTime());
-                contentValues.put(DBHelper.KEY_TITLE, mTitle.getText().toString());
-                contentValues.put(DBHelper.KEY_TYPE, mType.getText().toString());
-                contentValues.put(DBHelper.KEY_DESCRIPTION, mDescription.getText().toString());
-                contentValues.put(DBHelper.KEY_INSTRUCTOR, mInstructor.getText().toString());
-                contentValues.put(DBHelper.KEY_ROOM, mRoom.getText().toString());
-                contentValues.put(DBHelper.KEY_DAY, lesson.getDay());
-                contentValues.put(DBHelper.KEY_COLOR, lesson.getColor());
-                SQLdatabase.update(dbHelper.TABLE_SCHEDULE_ID, contentValues, "_id="+lesson.getId(), null);
-                dbHelper.close();
-                Intent intent = new Intent();
-                intent.putExtra("lessonId", lesson.getId());
-                intent.putExtra("day", lesson.getDay());
-                setResult(Activity.RESULT_OK, intent);
-                finish();
+            if (isFilledCorrect()){
+                Log.d(TAG, "selected day: "+((RadioButton)radioGroup.findViewById(radioGroup.getCheckedRadioButtonId())).getTag().toString());
+                lesson.setDay(((RadioButton)radioGroup.findViewById(radioGroup.getCheckedRadioButtonId())).getTag().toString());
+                lesson.setTitle(mTitle.getText().toString());
+                lesson.setDescription(mDescription.getText().toString());
+                lesson.setType(mType.getText().toString());
+                lesson.setInstructor(mInstructor.getText().toString());
+                lesson.setRoom(mRoom.getText().toString());
+                new updateAsyncTask(lesson).execute();
             }
+
         }
         return super.onOptionsItemSelected(item);
+    }
+    private class updateAsyncTask extends AsyncTask<Void, Void, Void> {
+        LessonModel lesson;
+
+        updateAsyncTask(LessonModel ls) {
+            lesson = ls;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            lessonViewModel.updateLesson(lesson);
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            Log.d(TAG, "onPostExecute: updated" );
+            Intent intent = new Intent();
+            setResult(Activity.RESULT_OK, intent);
+            finish();
+        }
+
     }
     private void initializeViews(){
         startTime = (TextView) findViewById(R.id.startTime);
@@ -171,10 +203,10 @@ public class EditLessonActivity extends AppCompatActivity implements View.OnClic
         colorPickerBtn = (SquareImage) findViewById(R.id.color_picker_btn);
     }
 
-    private void setValues(final Lesson lesson){
+    private void setValues(final LessonModel lesson){
         getSupportActionBar().setTitle(lesson.getTitle());
-        toolbar.setBackgroundColor(lesson.getColor());
-        changeTintToColor(lesson.getColor());
+        toolbar.setBackgroundColor((int)lesson.getColor());
+        changeTintToColor((int)lesson.getColor());
 
         startTime.setText(lesson.getStartTime());
         startTime.setOnClickListener(this);
@@ -190,47 +222,11 @@ public class EditLessonActivity extends AppCompatActivity implements View.OnClic
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
-
-                lesson.setDay((String) ((RadioButton) findViewById(checkedId)).getTag());
+        lesson.setDay((String) ((RadioButton) findViewById(checkedId)).getTag());
             }
         });
     }
-    private Lesson getLesson(int lessonId){
-        initializeDB(STUDENT_ID);
-        Lesson mLesson = null;
-        final Cursor cursor = SQLdatabase.rawQuery("SELECT * FROM "+ DBHelper.TABLE_SCHEDULE_ID+" WHERE _id = " + lessonId, null);
-        Log.d("mLog", "count cursor: "+ cursor.getCount());
-        if (cursor.moveToFirst()){
-            int idIndex = cursor.getColumnIndex(DBHelper.KEY_ID);
-            int dayIndex = cursor.getColumnIndex(DBHelper.KEY_DAY);
-            int startIndex = cursor.getColumnIndex(DBHelper.KEY_STARTTIME);
-            int endIndex = cursor.getColumnIndex(DBHelper.KEY_ENDTIME);
-            int titleIndex = cursor.getColumnIndex(DBHelper.KEY_TITLE);
-            int typeIndex = cursor.getColumnIndex(DBHelper.KEY_TYPE);
-            int descIndex = cursor.getColumnIndex(DBHelper.KEY_DESCRIPTION);
-            int roomIndex = cursor.getColumnIndex(DBHelper.KEY_ROOM);
-            int instructorIndex = cursor.getColumnIndex(DBHelper.KEY_INSTRUCTOR);
-            int colorIndex = cursor.getColumnIndex(DBHelper.KEY_COLOR);
-            do{
-                Log.d("mLog", "_id= "+cursor.getInt(idIndex)+", day = " + cursor.getString(dayIndex) +
-                        ", startTime = " + cursor.getString(startIndex) +
-                        ", title = " + cursor.getString(titleIndex)+
-                        ", endTime = " + cursor.getString(endIndex));
-                mLesson = new Lesson(cursor.getString(titleIndex), cursor.getString(startIndex),cursor.getString(endIndex),cursor.getString(instructorIndex),cursor.getString(roomIndex),cursor.getString(dayIndex), cursor.getInt(colorIndex));
-                mLesson.setType(cursor.getString(typeIndex));
-                mLesson.setDescription(cursor.getString(descIndex));
-                mLesson.setId(cursor.getInt(idIndex));
-            }
-            while(cursor.moveToNext());
-        }cursor.close();
-        dbHelper.close();
-        return mLesson;
-    }
 
-    private void initializeDB(String id){
-        dbHelper = new DBHelper(this, id);
-        SQLdatabase = dbHelper.getWritableDatabase();
-    }
     private void changeTintToColor(int tintColor){
         Log.d("mLog", "changeTintToColor: " + tintColor);
         ((SquareImage) findViewById(R.id.color_picker_btn)).setColorFilter(tintColor);

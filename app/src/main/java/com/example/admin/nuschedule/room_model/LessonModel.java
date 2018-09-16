@@ -1,35 +1,32 @@
-package com.example.admin.nuschedule.models;
+package com.example.admin.nuschedule.room_model;
 
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.PrimaryKey;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import static com.example.admin.nuschedule.other.Constants.dayOfWeek;
 
 /**
  * Created by Lenovo on 07.02.2018.
  */
-public class Lesson implements Parcelable {
-    private int id;
+@Entity(tableName = "lesson")
+public class LessonModel {
+
+    @PrimaryKey(autoGenerate = true)
+    private long id;
+    private long color;
     private String startTime;
     private String title, endTime, instructor, room, type, description;
     private String day;
-    private int color;
 
-    public Lesson(){
-
-    }
-    public Lesson(HashMap<String, Object> lesson) {
-        this.title = lesson.get("title").toString();
-        this.startTime = lesson.get("startTime").toString();
-        this.endTime = lesson.get("endTime").toString();
-        this.instructor = lesson.get("instructor").toString();
-        this.room = lesson.get("room").toString();
+    public LessonModel(){
 
     }
-    public Lesson(String tite, String startTime, String endTime,String instructor,String room,String day, int color) {
+    public LessonModel(String tite, String startTime, String endTime, String instructor, String room, String day, long color, String type, String description) {
         this.title = tite;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -37,37 +34,15 @@ public class Lesson implements Parcelable {
         this.room = room;
         this.day = day;
         this.color = color;
-
+        this.type = type;
+        this.description = description;
     }
 
-    protected Lesson(Parcel in) {
-        String[] data = new String[5];
-
-        in.readStringArray(data);
-        title = data[0];
-        startTime = data[1];
-        endTime = data[2];
-        instructor = data[3];
-        room = data[4];
-    }
-
-    public static final Creator<Lesson> CREATOR = new Creator<Lesson>() {
-        @Override
-        public Lesson createFromParcel(Parcel in) {
-            return new Lesson(in);
-        }
-
-        @Override
-        public Lesson[] newArray(int size) {
-            return new Lesson[size];
-        }
-    };
-
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -135,38 +110,26 @@ public class Lesson implements Parcelable {
         this.description = description;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeStringArray(new String[] {this.title,
-                this.startTime,
-                this.endTime, this.instructor, this.room});
-    }
 
     public String toString(){
-        return "{"+startTime+"; "+title+"; "+room+"; "+type+"}";
+        return "{"+id+";"+startTime+"; "+title+"; "+room+"; "+type+"; "+color+"}";
     }
 
-    public int getColor() {
+    public long getColor() {
         return color;
     }
 
-    public void setColor(int color) {
+    public void setColor(long color) {
         this.color = color;
     }
     public int getDayIndex(){
-        String[] dayOfWeek = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
         return Arrays.asList(dayOfWeek).indexOf(day);
     }
     public boolean equals(Object obj) {
         if (obj == null) return false;
         if (obj == this) return true;
-        if (!(obj instanceof Lesson)) return false;
-        Lesson o = (Lesson) obj;
+        if (!(obj instanceof LessonModel)) return false;
+        LessonModel o = (LessonModel) obj;
         return o.getId() == this.getId();
     }
 }

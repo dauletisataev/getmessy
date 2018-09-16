@@ -5,15 +5,17 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center">
+
         <TextView
+            android:id="@+id/lesson_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:maxLines="1"
             android:text="CSCI 152"
             android:textColor="@color/colorWhite"
-            android:textStyle="bold"
-            android:gravity="center_horizontal"
-            android:id="@+id/lesson_name"
-            />
+            android:textStyle="bold" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

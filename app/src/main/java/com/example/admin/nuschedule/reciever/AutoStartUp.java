@@ -11,11 +11,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.util.Log;
 
-import com.example.admin.nuschedule.activities.MainActivity;
 import com.example.admin.nuschedule.database.DBHelper;
-import com.example.admin.nuschedule.models.Day;
-import com.example.admin.nuschedule.models.Lesson;
 import com.example.admin.nuschedule.other.Utils;
+import com.example.admin.nuschedule.room_model.LessonModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,10 +49,10 @@ public class AutoStartUp extends BroadcastReceiver {
                 int colorIndex = cursor.getColumnIndex(DBHelper.KEY_COLOR);
 
                 do {
-                    Lesson lesson = new Lesson(cursor.getString(titleIndex), cursor.getString(startIndex),cursor.getString(endIndex),cursor.getString(instructorIndex),cursor.getString(roomIndex),cursor.getString(dayIndex), cursor.getInt(colorIndex));
-                    lesson.setId(cursor.getInt(idIndex));
-                    lesson.setType(cursor.getString(typeIndex));
-                    setAlarmService(lesson);
+//                    LessonModel lesson = new LessonModel(cursor.getString(titleIndex), cursor.getString(startIndex),cursor.getString(endIndex),cursor.getString(instructorIndex),cursor.getString(roomIndex),cursor.getString(dayIndex), cursor.getInt(colorIndex));
+//                    lesson.setId(cursor.getInt(idIndex));
+//                    lesson.setType(cursor.getString(typeIndex));
+//                    setAlarmService(lesson);
 
                 } while (cursor.moveToNext());
 
@@ -66,7 +64,7 @@ public class AutoStartUp extends BroadcastReceiver {
         }
     }
 
-    private void setAlarmService(Lesson lesson){
+    private void setAlarmService(LessonModel lesson){
         Calendar c = Calendar.getInstance();
         int dayIndex = Arrays.asList(dayOfWeek).indexOf(lesson.getDay());
         int minutes = utils.getMinutes(lesson.getStartTime());
@@ -86,7 +84,7 @@ public class AutoStartUp extends BroadcastReceiver {
         intent.putExtra("lesson_id", lesson.getId());
         intent.putExtra("subText", lesson.getStartTime()+"-"+lesson.getEndTime()+", "+lesson.getType()+"\n"+lesson.getRoom());
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, lesson.getId(), intent, 0);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, (int) lesson.getId(), intent, 0);
         AlarmManager am = (AlarmManager) mContext.getSystemService(ALARM_SERVICE);
         if(Build.VERSION.SDK_INT >= 19)
             am.setExact(AlarmManager.RTC_WAKEUP, c.getTimeInMillis() - 10*60*1000, pendingIntent);

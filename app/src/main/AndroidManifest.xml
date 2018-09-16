@@ -7,8 +7,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -16,7 +14,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activities.FileUploadActivity"
+        <activity
+            android:name=".activities.Main2Activity"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,8 +24,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:theme="@style/AppTheme.NoActionBar"
-            android:name=".activities.MainActivity"/>
+            android:name=".activities.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".activities.AddEventActivity"
             android:theme="@style/AppTheme.NoActionBar" />
@@ -36,12 +35,22 @@
         <activity
             android:name=".activities.EditLessonActivity"
             android:theme="@style/AppTheme.NoActionBar" />
-        <receiver android:name=".reciever.NotificationReciever"> </receiver>
-        <receiver android:name=".reciever.AutoStartUp" android:enabled="true" android:exported="false" android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+
+        <receiver android:name=".reciever.NotificationReciever" />
+        <receiver
+            android:name=".reciever.AutoStartUp"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".activities.AboutUsActivity"
+            android:label="@string/title_activity_about_us"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

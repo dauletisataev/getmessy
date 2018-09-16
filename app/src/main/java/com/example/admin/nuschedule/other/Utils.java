@@ -108,4 +108,8 @@ public class Utils {
         mBuilder.setAutoCancel(true);
         mNotificationManager.notify(2, mBuilder.build());
     }
+
+    public int[] getMainColors(Context context){
+        return context.getResources().getIntArray(R.array.mainColors);
+    }
 }

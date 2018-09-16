@@ -2,10 +2,13 @@ package com.example.admin.nuschedule.activities;
 
 import android.app.Activity;
 import android.app.TimePickerDialog;
+import android.arch.lifecycle.ViewModel;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -23,16 +26,22 @@ import android.widget.Toast;
 import com.example.admin.nuschedule.R;
 import com.example.admin.nuschedule.database.DBHelper;
 import com.example.admin.nuschedule.other.Utils;
+import com.example.admin.nuschedule.room_model.LessonModel;
 import com.example.admin.nuschedule.view.SquareImage;
+import com.example.admin.nuschedule.viewModels.LessonViewModel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 
 import petrov.kristiyan.colorpicker.ColorPicker;
 
+import static com.example.admin.nuschedule.other.Constants.STUDENT_ID;
+import static com.example.admin.nuschedule.other.Constants.TAG;
+
 public class AddEventActivity extends AppCompatActivity implements View.OnClickListener{
-    public String STUDENT_ID = "201599251";
     Utils utils;
     TextView startTime, endTime;
     EditText mTitle, mDescription, mType, mInstructor, mRoom;
@@ -44,11 +53,12 @@ public class AddEventActivity extends AppCompatActivity implements View.OnClickL
     int lesson_color = Color.parseColor("#00aff0");
     ArrayList<String> daysChecked = new ArrayList<>();
     Toolbar toolbar;
+    LessonViewModel lessonViewModel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_event);
-
+        lessonViewModel = ViewModelProviders.of(this).get(LessonViewModel.class);
         toolbar = (Toolbar) findViewById(R.id.toolBar);
         toolbar.setTitle("New lesson");
         toolbar.setTitleTextColor(getResources().getColor(R.color.white));
@@ -108,35 +118,60 @@ public class AddEventActivity extends AppCompatActivity implements View.OnClickL
         if (id == R.id.save_button) {
             if (isFilledCorrect()) {
                 getCheckedDays();
-                ArrayList<Integer> insertedIds= new ArrayList<>();
-                initializeDB(STUDENT_ID);
+                List<LessonModel> lessons = new ArrayList<>();
                 for (int i = 0; i < daysChecked.size(); i++) {
-                    ContentValues contentValues = new ContentValues();
-                    contentValues.put(DBHelper.KEY_STARTTIME, startTime.getText().toString());
-                    contentValues.put(DBHelper.KEY_ENDTIME, endTime.getText().toString());
-                    contentValues.put(DBHelper.KEY_TITLE, mTitle.getText().toString());
-                    contentValues.put(DBHelper.KEY_TYPE, mType.getText().toString());
-                    contentValues.put(DBHelper.KEY_DESCRIPTION, mDescription.getText().toString());
-                    contentValues.put(DBHelper.KEY_INSTRUCTOR, mInstructor.getText().toString());
-                    contentValues.put(DBHelper.KEY_ROOM, mRoom.getText().toString());
-                    contentValues.put(DBHelper.KEY_DAY, daysChecked.get(i));
-                    contentValues.put(DBHelper.KEY_COLOR, lesson_color);
-
-                    long insertedId = SQLdatabase.insert(dbHelper.TABLE_SCHEDULE_ID, null, contentValues);
-                    Log.d("mLog", "inserted id: "+insertedId);
-                    insertedIds.add((int) insertedId);
+                    LessonModel lesson = new LessonModel(
+                            mTitle.getText().toString(),
+                            startTime.getText().toString(),
+                            endTime.getText().toString(),
+                            mInstructor.getText().toString(),
+                            mRoom.getText().toString(),
+                            daysChecked.get(i),
+                            lesson_color,
+                            mType.getText().toString(),
+                            mDescription.getText().toString()
+                    );
+                    lessons.add(lesson);
+                    //Log.d("mLog", "inserted id: "+insertedId);
+                    //insertedIds.add((int) insertedId);
                 }
-                Intent returnIntent = new Intent();
-                returnIntent.putIntegerArrayListExtra("resultIds", insertedIds);
-                setResult(Activity.RESULT_OK, returnIntent);
-                finish();
+                new insertAsyncTask(lessons).execute(lessons);
+
 
 
             }
         }
         return super.onOptionsItemSelected(item);
     }
+    private class insertAsyncTask extends AsyncTask<List<LessonModel>, Void, List<Long>> {
+        List<Long> lesson_ids;
+        ArrayList<Integer> lesson_ids_int = new ArrayList<>();
+        List<LessonModel> lessons;
 
+        insertAsyncTask(List<LessonModel> lessons) {
+            this.lessons = lessons;
+        }
+
+        @Override
+        protected List<Long>  doInBackground(final List<LessonModel>... params) {
+            lesson_ids = lessonViewModel.insertLessons(params[0]);
+            return lesson_ids;
+        }
+
+        @Override
+        protected void onPostExecute(List<Long> result) {
+            super.onPostExecute(result);
+            for(long i : lesson_ids) {
+                Log.d(TAG, "onPostExecute id: "+i);
+                lesson_ids_int.add((int) i);
+            }
+            Log.d(TAG, "onPostExecute: " + result);
+            Intent returnIntent = new Intent();
+            returnIntent.putIntegerArrayListExtra("resultIds", lesson_ids_int );
+            setResult(Activity.RESULT_OK, returnIntent);
+            finish();
+        }
+    }
     @Override
     public void onClick(View v) {
         Calendar mcurrentTime;
@@ -210,10 +245,6 @@ public class AddEventActivity extends AppCompatActivity implements View.OnClickL
         if(((CheckBox) findViewById(R.id.checkbox_thursday)).isChecked()) daysChecked.add((String) ((CheckBox) findViewById(R.id.checkbox_thursday)).getTag());
         if(((CheckBox) findViewById(R.id.checkbox_friday)).isChecked()) daysChecked.add((String) ((CheckBox) findViewById(R.id.checkbox_friday)).getTag());
         Log.d("mLog", "getCheckedDays: "+daysChecked.toString());
-    }
-    private void initializeDB(String id){
-        dbHelper = new DBHelper(this, id);
-        SQLdatabase = dbHelper.getWritableDatabase();
     }
     private boolean isFilledCorrect(){
         if( mTitle.getText().toString().trim().length() == 0 || mRoom.getText().toString().trim().length() == 0) {
